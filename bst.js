@@ -83,16 +83,9 @@ export class Tree {
     }
 
     #search(root, value) {
-        // Base Cases: root is null or value is present at root
-        if (root === null || root.value === value)
-            return root;
-
-        // Key is greater than root's value
-        if (root.value < value)
-            return this.#search(root.right, value);
-
-        // Key is smaller than root's value
-        return this.#search(root.left, value);
+        if (!root) return null;
+        if (root.value === value) return root;
+        return value < root.value ? this.#search(root.left, value) : this.#search(root.right, value);
     }
 
     levelOrderForEach(callback) {
@@ -156,5 +149,48 @@ export class Tree {
         }
 
         traverse(this.root);
+    }
+
+    height(value) {
+        const target = this.#search(this.root, value);
+        return target ? this.#nodeHeight(target) : null;
+    }
+
+    #nodeHeight(node) {
+        if (!node) return -1; // empty subtree = -1 so leaf → 0
+        const leftH = this.#nodeHeight(node.left);
+        const rightH = this.#nodeHeight(node.right);
+        return Math.max(leftH, rightH) + 1;
+    }
+
+    depth(value) {
+        let current = this.root;
+        let depthCount = 0;
+
+        while (current) {
+            if (current.value === value) return depthCount;
+            current = value < current.value ? current.left : current.right;
+            depthCount++;
+        }
+
+        return null;
+    }
+
+    isBalanced() {
+        function check(node) {
+            if (!node) return 0;
+
+            const leftHeight = check(node.left);
+            if (leftHeight === -1) return -1;
+
+            const rightHeight = check(node.right);
+            if (rightHeight === -1) return -1;
+
+            if (Math.abs(leftHeight - rightHeight) > 1) return -1;
+
+            return Math.max(leftHeight, rightHeight) + 1;
+        }
+
+        return check(this.root) !== -1;
     }
 }
