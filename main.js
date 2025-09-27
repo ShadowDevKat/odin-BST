@@ -1,9 +1,35 @@
 import { Tree } from "./bst.js";
-import { prettyPrint, sortArray } from "./utils.js";
+import { prettyPrint, randomSortedArray } from "./utils.js";
 
-const testArr = [1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324];
-const sortedTestArr = sortArray(testArr);
+let testArr = randomSortedArray(20);
+const myTree = new Tree(testArr);
+prettyPrint(myTree.root);
+console.log("isBalanced: ", myTree.isBalanced());
+printData();
+massInsert();
+prettyPrint(myTree.root);
+console.log("isBalanced: ", myTree.isBalanced());
+myTree.rebalance();
+prettyPrint(myTree.root);
+console.log("isBalanced: ", myTree.isBalanced());
+printData();
 
-const testTree = new Tree(sortedTestArr);
+function massInsert() {
+    const arr = randomSortedArray(200);
+    arr.forEach(value => myTree.insert(value));
+}
 
-prettyPrint(testTree.root);
+function printData() {
+    const traversals = [
+        ["Level", myTree.levelOrderForEach],
+        ["PreOrder", myTree.preOrderForEach],
+        ["PostOrder", myTree.postOrderForEach],
+        ["InOrder", myTree.inOrderForEach],
+    ];
+
+    for (const [name, method] of traversals) {
+        const values = [];
+        method.call(myTree, node => values.push(node.value));
+        console.log(`${name} Traversal: [${values.join(", ")}]`);
+    }
+}
