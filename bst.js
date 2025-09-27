@@ -8,189 +8,143 @@ class Node {
 
 export class Tree {
     constructor(arr) {
-        this.root = this.buildTree(arr);
-    }
-
-    buildTree(arr) {
-        return this.#buildTree(arr, 0, arr.length - 1);
+        this.root = this.#buildTree(arr, 0, arr.length - 1);
     }
 
     #buildTree(arr, start, end) {
         if (start > end) return null;
-
-        let mid = start + Math.floor((end - start) / 2);
-        let root = new Node(arr[mid]);
-
-        root.left = this.#buildTree(arr, start, mid - 1);
-        root.right = this.#buildTree(arr, mid + 1, end);
-
-        return root;
+        const mid = Math.floor((start + end) / 2);
+        const node = new Node(arr[mid]);
+        node.left = this.#buildTree(arr, start, mid - 1);
+        node.right = this.#buildTree(arr, mid + 1, end);
+        return node;
     }
 
-    insertItem(value) {
+    insert(value) {
         this.root = this.#insert(this.root, value);
     }
-
-    #insert(root, value) {
-        if (root === null)
-            return new Node(value);
-
-        if (root.value === value)
-            return root;
-
-        if (value < root.value) {
-            root.left = this.#insert(root.left, value);
-        }
-        else if (value > root.value) {
-            root.right = this.#insert(root.right, value);
-        }
-
-        return root;
+    #insert(node, value) {
+        if (!node) return new Node(value);
+        if (value < node.value) node.left = this.#insert(node.left, value);
+        else if (value > node.value) node.right = this.#insert(node.right, value);
+        return node;
     }
 
-    deleteItem(value) {
+    delete(value) {
         this.root = this.#delete(this.root, value);
     }
+    #delete(node, value) {
+        if (!node) return null;
 
-    #delete(root, value) {
-        if (!root) return null;
-
-        if (value < root.value) {
-            root.left = this.#delete(root.left, value);
-        } else if (value > root.value) {
-            root.right = this.#delete(root.right, value);
-        } else {
-            // Node found
-            if (!root.left) return root.right;   // Only right child or none
-            if (!root.right) return root.left;   // Only left child
-
-            // Two children: get inorder successor
-            const succ = this.#getSuccessor(root);
-            root.value = succ.value;
-            root.right = this.#delete(root.right, succ.value);
+        if (value < node.value) node.left = this.#delete(node.left, value);
+        else if (value > node.value) node.right = this.#delete(node.right, value);
+        else {
+            if (!node.left) return node.right;
+            if (!node.right) return node.left;
+            const succ = this.#minValueNode(node.right);
+            node.value = succ.value;
+            node.right = this.#delete(node.right, succ.value);
         }
-        return root;
+        return node;
+    }
+    #minValueNode(node) {
+        while (node.left) node = node.left;
+        return node;
     }
 
-    #getSuccessor(node) {
-        let curr = node.right;
-        while (curr && curr.left) curr = curr.left;
-        return curr;
+    find(value) {
+        let curr = this.root;
+        while (curr) {
+            if (value === curr.value) return curr;
+            curr = value < curr.value ? curr.left : curr.right;
+        }
+        return null;
     }
 
-    findItem(value) {
-        return this.#search(this.root, value);
-    }
-
-    #search(root, value) {
-        if (!root) return null;
-        if (root.value === value) return root;
-        return value < root.value ? this.#search(root.left, value) : this.#search(root.right, value);
+    #requireCallback(cb) {
+        if (typeof cb !== "function") throw new Error("A callback function is required");
     }
 
     levelOrderForEach(callback) {
-        if (typeof callback !== "function") {
-            throw new Error("A callback function is required");
-        }
+        this.#requireCallback(callback);
         if (!this.root) return;
-
         const queue = [this.root];
-        let index = 0;
-
-        while (index < queue.length) {
-            const node = queue[index++];
+        for (let i = 0; i < queue.length; i++) {
+            const node = queue[i];
             callback(node);
-
             if (node.left) queue.push(node.left);
             if (node.right) queue.push(node.right);
         }
     }
 
     inOrderForEach(callback) {
-        if (typeof callback !== "function") {
-            throw new Error("A callback function is required");
-        }
-
+        this.#requireCallback(callback);
         function traverse(node) {
             if (!node) return;
-            traverse(node.left);     // Left
-            callback(node);          // Root
-            traverse(node.right);    // Right
+            traverse(node.left);
+            callback(node);
+            traverse(node.right);
         }
-
         traverse(this.root);
     }
 
     preOrderForEach(callback) {
-        if (typeof callback !== "function") {
-            throw new Error("A callback function is required");
-        }
-
+        this.#requireCallback(callback);
         function traverse(node) {
             if (!node) return;
-            callback(node);          // Root
-            traverse(node.left);     // Left
-            traverse(node.right);    // Right
+            callback(node);
+            traverse(node.left);
+            traverse(node.right);
         }
-
         traverse(this.root);
     }
 
     postOrderForEach(callback) {
-        if (typeof callback !== "function") {
-            throw new Error("A callback function is required");
-        }
-
+        this.#requireCallback(callback);
         function traverse(node) {
             if (!node) return;
-            traverse(node.left);     // Left
-            traverse(node.right);    // Right
-            callback(node);          // Root
+            traverse(node.left);
+            traverse(node.right);
+            callback(node);
         }
-
         traverse(this.root);
     }
 
     height(value) {
-        const target = this.#search(this.root, value);
-        return target ? this.#nodeHeight(target) : null;
+        const node = this.find(value);
+        return node ? this.#height(node) : null;
     }
-
-    #nodeHeight(node) {
-        if (!node) return -1; // empty subtree = -1 so leaf → 0
-        const leftH = this.#nodeHeight(node.left);
-        const rightH = this.#nodeHeight(node.right);
-        return Math.max(leftH, rightH) + 1;
+    #height(node) {
+        if (!node) return -1; // height of empty subtree
+        return Math.max(this.#height(node.left), this.#height(node.right)) + 1;
     }
 
     depth(value) {
-        let current = this.root;
-        let depthCount = 0;
-
-        while (current) {
-            if (current.value === value) return depthCount;
-            current = value < current.value ? current.left : current.right;
-            depthCount++;
+        let curr = this.root, d = 0;
+        while (curr) {
+            if (curr.value === value) return d;
+            curr = value < curr.value ? curr.left : curr.right;
+            d++;
         }
-
         return null;
     }
 
     isBalanced() {
         function check(node) {
             if (!node) return 0;
-
-            const leftHeight = check(node.left);
-            if (leftHeight === -1) return -1;
-
-            const rightHeight = check(node.right);
-            if (rightHeight === -1) return -1;
-
-            if (Math.abs(leftHeight - rightHeight) > 1) return -1;
-
-            return Math.max(leftHeight, rightHeight) + 1;
+            const left = check(node.left);
+            if (left === -1) return -1;
+            const right = check(node.right);
+            if (right === -1) return -1;
+            if (Math.abs(left - right) > 1) return -1;
+            return Math.max(left, right) + 1;
         }
-
         return check(this.root) !== -1;
+    }
+
+    rebalance() {
+        const values = [];
+        this.inOrderForEach(node => values.push(node.value));
+        this.root = this.#buildTree(values, 0, values.length - 1);
     }
 }
